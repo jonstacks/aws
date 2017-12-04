@@ -3,7 +3,7 @@
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
-  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/credentials","aws/endpoints","aws/request","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/ec2"]
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/ec2","service/sts"]
   revision = "e6c5e190452424b404ecdb81d6e3991d46b18e9d"
   version = "v1.12.26"
 
@@ -18,9 +18,21 @@
   packages = ["."]
   revision = "0b12d6b5"
 
+[[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  revision = "65fec0d89a572b4367094e2058d3ebe667de3b60"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8233359d75b767d03854df5a1988efc6ba877417346f5d8bf3a96055596beef2"
+  inputs-digest = "5a06bab84320322bc9d6b71dfb8b2c0bd0d890b61d1697c0f2a362dd68d4e47a"
   solver-name = "gps-cdcl"
   solver-version = 1
