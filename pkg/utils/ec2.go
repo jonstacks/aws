@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -14,4 +17,12 @@ func GetInstanceName(i *ec2.Instance) string {
 		}
 	}
 	return ""
+}
+
+// ExitErrorHandler exits the program with a non-zero exit status if err != nil
+func ExitErrorHandler(err error) {
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
 }
