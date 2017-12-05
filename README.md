@@ -2,6 +2,23 @@
 
 AWS golang pkg, binaries, utils, etc.
 
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Install](#install)
+- [Reservation Audits](#reservation-audits)
+	- [reserved-instance-audit](#reserved-instance-audit)
+	- [reserved-rds-audit](#reserved-rds-audit)
+
+<!-- /TOC -->
+
+## Install
+
+You can install most simply by using `go get`:
+
+```
+go get -u github.com/jonstacks/aws/cmd/...
+```
+
 ## Reservation Audits
 
 Occasionally, you might find yourself wanting to quickly audit reservations
