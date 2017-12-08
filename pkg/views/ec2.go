@@ -16,14 +16,23 @@ type ReservationUtilization struct {
 	Running                             []*ec2.Instance
 	Reservations                        []*ec2.ReservedInstances
 	InstanceTypeReservationUtilizations map[string]*InstanceTypeReservationUtilization
+
+	opts ReservationUtilizationOptions
+}
+
+// ReservationUtilizationOptions are options which modify the
+// ReservationUtilization view.
+type ReservationUtilizationOptions struct {
+	OnlyUnmatched bool
 }
 
 // NewReservationUtilization Creates a new view for the reserved utilization.
-func NewReservationUtilization(running []*ec2.Instance, reservations []*ec2.ReservedInstances) *ReservationUtilization {
+func NewReservationUtilization(running []*ec2.Instance, reservations []*ec2.ReservedInstances, opts ReservationUtilizationOptions) *ReservationUtilization {
 	ru := ReservationUtilization{
 		Running:                             running,
 		Reservations:                        reservations,
 		InstanceTypeReservationUtilizations: make(map[string]*InstanceTypeReservationUtilization),
+		opts: opts,
 	}
 
 	for _, i := range ru.Running {
@@ -38,6 +47,10 @@ func NewReservationUtilization(running []*ec2.Instance, reservations []*ec2.Rese
 		iru.NumReserved += int(*r.InstanceCount)
 	}
 
+	if opts.OnlyUnmatched {
+		ru.pruneMatched()
+	}
+
 	return &ru
 }
 
@@ -49,6 +62,16 @@ func (ru *ReservationUtilization) getOrInitializeITypeReservation(s string) *Ins
 		}
 	}
 	return ru.InstanceTypeReservationUtilizations[s]
+}
+
+// pruneMatched removes all the keys where the running count = reserved count
+func (ru *ReservationUtilization) pruneMatched() {
+	for k, v := range ru.InstanceTypeReservationUtilizations {
+		// This instnace type is perfectly matched, lets delete it.
+		if v.Unreserved() == 0 {
+			delete(ru.InstanceTypeReservationUtilizations, k)
+		}
+	}
 }
 
 // SortedInstanceTypes returns a sorted slice of the instance types

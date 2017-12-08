@@ -32,6 +32,10 @@ Audits your reserved EC2 instances against your currently running ones.
 
 ![reserved-instance-audit](doc/screenshots/reserved-instance-audit.png)
 
+Options:
+
+* `--only-unmatched`: Show only instance types that are not perfectly reserved.
+
 ### reserved-rds-audit
 
 Audits your reserved RDS instances against your currently running ones.

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jonstacks/aws/pkg/models"
@@ -9,6 +11,12 @@ import (
 )
 
 func main() {
+
+	onlyUnmatched := flag.Bool("only-unmatched", false,
+		"Only show instance types that are unmatched in running & reserved instnace count.")
+
+	flag.Parse()
+
 	s := session.Must(
 		session.NewSessionWithOptions(
 			session.Options{
@@ -26,6 +34,9 @@ func main() {
 	opts := models.RunningInstancesOpts{IncludeSpot: false}
 	all := models.RunningInstances(opts)
 
-	v := views.NewReservationUtilization(all, ris)
+	viewOpts := views.ReservationUtilizationOptions{
+		OnlyUnmatched: *onlyUnmatched,
+	}
+	v := views.NewReservationUtilization(all, ris, viewOpts)
 	v.Print()
 }
