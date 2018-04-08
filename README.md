@@ -55,7 +55,7 @@ the complete logs:
 You can install it with:
 
 ```
-go get -u https://github.com/jonstacks/aws/cmd/rds-logs-download-url
+go get -u github.com/jonstacks/aws/cmd/rds-logs-download-url
 ```
 
 Along with a program like `curl` you can have a complete solution to
@@ -66,9 +66,11 @@ downloading your RDS logs like so:
 
 set -e
 
-# This program requires that you supply the AWS_DEFAULT_REGION as an env var.
+# This program requires that you supply these AWS environment variables.
 # Can possibly pull this out of an AWS config in the future.
 export AWS_DEFAULT_REGION="us-west-2"
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
 
 LOG_NAME="error/postgresql.log.2018-04-08-15"
 
