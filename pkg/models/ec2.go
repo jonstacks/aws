@@ -65,3 +65,10 @@ func RunningInstances(opts RunningInstancesOpts) []*ec2.Instance {
 	}
 	return instances
 }
+
+// Subnets returns a list of subnets
+func Subnets() ([]*ec2.Subnet, error) {
+	params := &ec2.DescribeSubnetsInput{}
+	resp, err := ec2Client.DescribeSubnets(params)
+	return resp.Subnets, err
+}
