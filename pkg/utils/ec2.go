@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"math"
+	"net"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -36,4 +38,35 @@ func GetTagValue(tags []*ec2.Tag, key string) string {
 		}
 	}
 	return ""
+}
+
+func powInt(x, y int) int {
+	return int(math.Pow(float64(x), float64(y)))
+}
+
+// SubnetSize calculates the number of addresses in a given CIDR
+func SubnetSize(cidr string) (int, error) {
+	_, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return 0, err
+	}
+
+	ones, bits := ipnet.Mask.Size()
+	exponent := bits - ones
+	return powInt(2, exponent), nil
+}
+
+// IsSubnetEmpty returns true/false depending on if the subnet is empty. This is
+// tailored to Amazon's implementation where they reserve 5 IP addresses per
+// subnet. So, we will consider the subnet empty if its available IP Addresses
+// is equal to the subnet size minus 5
+func IsSubnetEmpty(subnet *ec2.Subnet) bool {
+	size, err := SubnetSize(aws.StringValue(subnet.CidrBlock))
+	if err != nil {
+		return false
+	}
+
+	emptySubnetSize := int64(size - 5)
+
+	return aws.Int64Value(subnet.AvailableIpAddressCount) == emptySubnetSize
 }

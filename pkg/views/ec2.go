@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -11,6 +12,11 @@ import (
 	"github.com/jonstacks/aws/pkg/utils"
 	"github.com/olekukonko/tablewriter"
 )
+
+// View is an interface which supports the Render method.
+type View interface {
+	Render(io.Writer)
+}
 
 // ReservationUtilization shows which instance types & families we are utilizing
 // instances in.
@@ -188,4 +194,42 @@ func (ibs *InstancesBySubnet) Print() {
 	fmt.Printf("%d Subnets\n", len(ibs.subnets))
 	fmt.Printf("%d Empty Subnets\n", len(emptySubnets))
 	fmt.Printf("%d Total Instances\n", instanceCount)
+}
+
+// EmptySubnets is a view which shows subnets that are empty
+type EmptySubnets struct {
+	subnets []*ec2.Subnet
+}
+
+// NewEmptySubnets creates a new empty subnets view
+func NewEmptySubnets(subnets []*ec2.Subnet) *EmptySubnets {
+	return &EmptySubnets{subnets: subnets}
+}
+
+// Render implements views.View
+func (es *EmptySubnets) Render(w io.Writer) {
+	table := tablewriter.NewWriter(w)
+	table.SetHeader([]string{
+		"ID",
+		"Name",
+		"CIDR",
+		"Available IPs",
+		"Subnet Size",
+		"State",
+	})
+	for _, s := range es.subnets {
+		if utils.IsSubnetEmpty(s) {
+			subnetSize, _ := utils.SubnetSize(aws.StringValue(s.CidrBlock))
+			table.Append([]string{
+				aws.StringValue(s.SubnetId),
+				utils.GetTagValue(s.Tags, "Name"),
+				aws.StringValue(s.CidrBlock),
+				strconv.FormatInt(aws.Int64Value(s.AvailableIpAddressCount), 10),
+				strconv.Itoa(subnetSize),
+				aws.StringValue(s.State),
+			})
+		}
+	}
+
+	table.Render()
 }
