@@ -26,3 +26,14 @@ func ExitErrorHandler(err error) {
 		os.Exit(2)
 	}
 }
+
+// GetTagValue iterates over the tags and returns the value of the given tag
+// if it exists, otherwise ""
+func GetTagValue(tags []*ec2.Tag, key string) string {
+	for _, t := range tags {
+		if aws.StringValue(t.Key) == key {
+			return aws.StringValue(t.Value)
+		}
+	}
+	return ""
+}

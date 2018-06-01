@@ -1,12 +1,14 @@
 package views
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/jonstacks/aws/pkg/utils"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -111,4 +113,79 @@ func (ru *ReservationUtilization) Print() {
 	}
 
 	table.Render()
+}
+
+// InstancesBySubnet is a view for showing the instances grouped by subnet.
+type InstancesBySubnet struct {
+	subnets   map[string]*ec2.Subnet
+	instances map[string][]*ec2.Instance
+}
+
+// NewInstancesBySubnet creates a new view from the instances and subnets
+func NewInstancesBySubnet(instances []*ec2.Instance, subnets []*ec2.Subnet) *InstancesBySubnet {
+	ibs := &InstancesBySubnet{
+		subnets:   make(map[string]*ec2.Subnet),
+		instances: make(map[string][]*ec2.Instance),
+	}
+	for _, i := range instances {
+		ibs.AddInstance(i)
+	}
+	for _, s := range subnets {
+		ibs.AddSubnet(s)
+	}
+	return ibs
+}
+
+// AddInstance adds a new instance to the view
+func (ibs *InstancesBySubnet) AddInstance(i *ec2.Instance) {
+	subnetID := aws.StringValue(i.SubnetId)
+	if _, ok := ibs.instances[subnetID]; !ok {
+		ibs.instances[subnetID] = make([]*ec2.Instance, 0)
+	}
+	ibs.instances[subnetID] = append(ibs.instances[subnetID], i)
+}
+
+// AddSubnet adds a new subnet to the view
+func (ibs *InstancesBySubnet) AddSubnet(s *ec2.Subnet) {
+	subnetID := aws.StringValue(s.SubnetId)
+	ibs.subnets[subnetID] = s
+}
+
+// Print prints the InstancesBySubnet view
+func (ibs *InstancesBySubnet) Print() {
+	emptySubnets := make([]*ec2.Subnet, 0)
+	instanceCount := 0
+
+	subnetTemplate := func(s *ec2.Subnet) string {
+		subnetID := aws.StringValue(s.SubnetId)
+		name := utils.GetTagValue(s.Tags, "Name")
+		cidr := aws.StringValue(s.CidrBlock)
+		return fmt.Sprintf("%s [Name=%s][CIDR=%s]", subnetID, name, cidr)
+	}
+
+	for subnetID, subnet := range ibs.subnets {
+		instances, ok := ibs.instances[subnetID]
+		if !ok {
+			// Subnet is Empty
+			emptySubnets = append(emptySubnets, subnet)
+			continue
+		}
+
+		fmt.Printf("--- %s ---\n", subnetTemplate(subnet))
+		for _, i := range instances {
+			instanceCount++
+			fmt.Printf("   * %s (%s)\n", aws.StringValue(i.InstanceId), utils.GetTagValue(i.Tags, "Name"))
+		}
+		fmt.Println()
+	}
+
+	fmt.Println("------ Empty Subnets ----")
+	for _, subnet := range emptySubnets {
+		fmt.Printf("%s\n", subnetTemplate(subnet))
+	}
+
+	fmt.Println("----- Summary -----")
+	fmt.Printf("%d Subnets\n", len(ibs.subnets))
+	fmt.Printf("%d Empty Subnets\n", len(emptySubnets))
+	fmt.Printf("%d Total Instances\n", instanceCount)
 }
