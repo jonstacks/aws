@@ -216,6 +216,7 @@ func (es *EmptySubnets) Render(w io.Writer) {
 		"Available IPs",
 		"Subnet Size",
 		"State",
+		"VPC ID",
 	})
 	for _, s := range es.subnets {
 		if utils.IsSubnetEmpty(s) {
@@ -227,6 +228,7 @@ func (es *EmptySubnets) Render(w io.Writer) {
 				strconv.FormatInt(aws.Int64Value(s.AvailableIpAddressCount), 10),
 				strconv.Itoa(subnetSize),
 				aws.StringValue(s.State),
+				aws.StringValue(s.VpcId),
 			})
 		}
 	}
