@@ -72,3 +72,10 @@ func Subnets() ([]*ec2.Subnet, error) {
 	resp, err := ec2Client.DescribeSubnets(params)
 	return resp.Subnets, err
 }
+
+// VPCs returns a list of VPCs
+func VPCs() ([]*ec2.Vpc, error) {
+	params := &ec2.DescribeVpcsInput{}
+	resp, err := ec2Client.DescribeVpcs(params)
+	return resp.Vpcs, err
+}
