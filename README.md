@@ -42,6 +42,14 @@ Audits your reserved RDS instances against your currently running ones.
 
 ![reserved-rds-audit](doc/screenshots/reserved-rds-audit.png)
 
+## Finding available subnet space in a VPC
+
+When you want to create a new subnet, it can be difficult to see all of the
+ranges that are available to you in the console. This utility shows you the
+largest contiguous subnet space available to you in your VPC.
+
+![vpc-free-ranges](doc/screenshots/vpc-free-ranges)
+
 ## Getting a download URL for your RDS logs
 
 It appears that both the `awscli` and sdk libraries are broken for downloading

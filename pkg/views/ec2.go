@@ -3,13 +3,16 @@ package views
 import (
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jonstacks/aws/pkg/utils"
+	"github.com/jonstacks/networktree/pkg/networktree"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -231,6 +234,80 @@ func (es *EmptySubnets) Render(w io.Writer) {
 				aws.StringValue(s.VpcId),
 			})
 		}
+	}
+
+	table.Render()
+}
+
+// VPCFreeSubnets gives you available subnet ranges for a VPC
+type VPCFreeSubnets struct {
+	vpcSubnetMap map[*ec2.Vpc][]*ec2.Subnet
+}
+
+// NewVPCFreeSubnets creates a new view for showing free subnets in each VPC
+func NewVPCFreeSubnets(vpcs []*ec2.Vpc, subnets []*ec2.Subnet) *VPCFreeSubnets {
+	vfs := &VPCFreeSubnets{
+		vpcSubnetMap: make(map[*ec2.Vpc][]*ec2.Subnet),
+	}
+
+	for _, vpc := range vpcs {
+		for _, subnet := range subnets {
+			if aws.StringValue(subnet.VpcId) == aws.StringValue(vpc.VpcId) {
+				vfs.addSubnet(vpc, subnet)
+			}
+		}
+	}
+
+	return vfs
+}
+
+func (vfs *VPCFreeSubnets) addSubnet(v *ec2.Vpc, s *ec2.Subnet) {
+	if _, ok := vfs.vpcSubnetMap[v]; !ok {
+		vfs.vpcSubnetMap[v] = make([]*ec2.Subnet, 0)
+	}
+	vfs.vpcSubnetMap[v] = append(vfs.vpcSubnetMap[v], s)
+}
+
+func (vfs *VPCFreeSubnets) Render(w io.Writer) {
+	table := tablewriter.NewWriter(w)
+	table.SetHeader([]string{
+		"VPC ID",
+		"VPC Name",
+		"VPC CIDR",
+		"Available Subnets",
+	})
+
+	for vpc, subnets := range vfs.vpcSubnetMap {
+		cidr := aws.StringValue(vpc.CidrBlock)
+		tree, err := networktree.New(cidr)
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+			continue
+		}
+		for _, subnet := range subnets {
+			subCidr := aws.StringValue(subnet.CidrBlock)
+			_, sn, err := net.ParseCIDR(subCidr)
+			if err != nil {
+				continue
+			}
+			subtree := tree.Find(sn)
+			if subtree != nil {
+				subtree.MarkUsed()
+			}
+		}
+
+		unusedRanges := tree.UnusedRanges()
+		unusedCIDRs := make([]string, len(unusedRanges))
+		for i, n := range unusedRanges {
+			unusedCIDRs[i] = n.String()
+		}
+
+		table.Append([]string{
+			aws.StringValue(vpc.VpcId),
+			utils.GetTagValue(vpc.Tags, "Name"),
+			aws.StringValue(vpc.CidrBlock),
+			strings.Join(unusedCIDRs, "\n"),
+		})
 	}
 
 	table.Render()
