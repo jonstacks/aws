@@ -1,13 +1,14 @@
 # aws
 
 AWS golang pkg, binaries, utils, etc.
-
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [Install](#install)
 - [Reservation Audits](#reservation-audits)
 	- [reserved-instance-audit](#reserved-instance-audit)
 	- [reserved-rds-audit](#reserved-rds-audit)
+- [Finding available subnet space in a VPC](#finding-available-subnet-space-in-a-vpc)
+- [Getting a download URL for your RDS logs](#getting-a-download-url-for-your-rds-logs)
 
 <!-- /TOC -->
 
