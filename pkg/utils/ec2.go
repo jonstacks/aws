@@ -15,7 +15,7 @@ import (
 func GetInstanceName(i *ec2.Instance) string {
 	for _, t := range i.Tags {
 		if aws.StringValue(t.Key) == "Name" {
-			return aws.StringValue(t.Key)
+			return aws.StringValue(t.Value)
 		}
 	}
 	return ""
