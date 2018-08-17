@@ -43,6 +43,17 @@ Audits your reserved RDS instances against your currently running ones.
 
 ![reserved-rds-audit](doc/screenshots/reserved-rds-audit.png)
 
+## Auditing EC2 Instances
+
+You might want to audit your existing EC2 Instances to make sure they meet
+certain criteria.
+
+### instances-without-cost-tag
+
+The `instances-without-cost-tag` command finds running instances that do not
+contain a non-empty `cost` tag. This is helpful for making sure all instances
+are accounted for on an internal bill back basis.
+
 ## Finding available subnet space in a VPC
 
 When you want to create a new subnet, it can be difficult to see all of the
