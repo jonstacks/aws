@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,8 +11,15 @@ import (
 	"github.com/jonstacks/aws/pkg/utils"
 )
 
+var costTag string
+
+func init() {
+	flag.StringVar(&costTag, "cost-tag", "cost", "The tag key for determining cost")
+	flag.Parse()
+}
+
 func hasCostTag(i *ec2.Instance) bool {
-	return utils.GetTagValue(i.Tags, "cost") != ""
+	return utils.GetTagValue(i.Tags, costTag) != ""
 }
 
 func identifier(i *ec2.Instance) string {
