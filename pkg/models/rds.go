@@ -35,9 +35,23 @@ func RunningDBInstances() ([]*rds.DBInstance, error) {
 	instances := resp.DBInstances
 	filtered := make([]*rds.DBInstance, 0)
 	for _, i := range instances {
-		if aws.StringValue(i.DBInstanceStatus) == "available" {
+		status := aws.StringValue(i.DBInstanceStatus)
+		if status == "available" || status == "backing-up" {
 			filtered = append(filtered, i)
 		}
 	}
 	return filtered, err
+}
+
+// DBSnapshots returns a slice of RDS Snapshots.
+func DBSnapshots() []*rds.DBSnapshot {
+	snapshots := make([]*rds.DBSnapshot, 0)
+	params := &rds.DescribeDBSnapshotsInput{}
+
+	rdsClient.DescribeDBSnapshotsPages(params,
+		func(page *rds.DescribeDBSnapshotsOutput, lastPage bool) bool {
+			snapshots = append(snapshots, page.DBSnapshots...)
+			return !lastPage
+		})
+	return snapshots
 }

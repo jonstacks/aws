@@ -1,9 +1,11 @@
 package views
 
 import (
+	"io"
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/rds"
@@ -87,5 +89,94 @@ func (ru *RDSReservationUtilization) Print() {
 		})
 	}
 
+	table.Render()
+}
+
+// RDSSnapshotAudit gives an overview of the RDS snapshots, with their instances,
+// and how much storage is being used
+type RDSSnapshotAudit struct {
+	Snapshots []*rds.DBSnapshot
+	Instances []*rds.DBInstance
+}
+
+// NewRDSSnapshotAudit returns an audit view for comparing snapshots vs running
+// instances
+func NewRDSSnapshotAudit(snapshots []*rds.DBSnapshot, instances []*rds.DBInstance) *RDSSnapshotAudit {
+	return &RDSSnapshotAudit{Snapshots: snapshots, Instances: instances}
+}
+
+// NumRunningInstances returns the number of running instances
+func (audit *RDSSnapshotAudit) NumRunningInstances() int {
+	return len(audit.Instances)
+}
+
+// NumSnapshots returns the number of snapshots
+func (audit *RDSSnapshotAudit) NumSnapshots() int {
+	return len(audit.Snapshots)
+}
+
+// TotalRunningStorageGB returns the total storage of running intances in GB
+func (audit *RDSSnapshotAudit) TotalRunningStorageGB() int64 {
+	var storage int64
+	for _, i := range audit.Instances {
+		storage += aws.Int64Value(i.AllocatedStorage)
+	}
+	return storage
+}
+
+// TotalVirtualSnapshotStorageGB returns the total storage of snapshots in GB.
+// This is the "virtual" storage though as the snapshots only store deltas
+func (audit *RDSSnapshotAudit) TotalVirtualSnapshotStorageGB() int64 {
+	var storage int64
+	for _, s := range audit.Snapshots {
+		storage += aws.Int64Value(s.AllocatedStorage)
+	}
+	return storage
+}
+
+// OldInstancesWithSnapshots returns a map whose keys are DBInstanceIdentifiers
+// which no longer exist. The values are slices of *rds.DBSnapshots
+func (audit *RDSSnapshotAudit) OldInstancesWithSnapshots() map[string][]*rds.DBSnapshot {
+	runningIdentifiers := make(map[string]bool)
+	for _, i := range audit.Instances {
+		dbIdentifier := aws.StringValue(i.DBInstanceIdentifier)
+		runningIdentifiers[dbIdentifier] = true
+	}
+
+	old := make(map[string][]*rds.DBSnapshot)
+	for _, snap := range audit.Snapshots {
+		dbIdentifier := aws.StringValue(snap.DBInstanceIdentifier)
+		if _, ok := runningIdentifiers[dbIdentifier]; !ok {
+			if _, ok := old[dbIdentifier]; !ok {
+				old[dbIdentifier] = make([]*rds.DBSnapshot, 0)
+			}
+
+			old[dbIdentifier] = append(old[dbIdentifier], snap)
+		}
+	}
+	return old
+}
+
+// Render renders the table to the io.Writer
+func (audit *RDSSnapshotAudit) Render(w io.Writer) {
+	table := tablewriter.NewWriter(w)
+	table.SetHeader([]string{
+		"DB Instance Identifier",
+		"Snapshot Identifier",
+		"Created Time",
+		"Size",
+	})
+
+	oldSnapMap := audit.OldInstancesWithSnapshots()
+	for i := range oldSnapMap {
+		for _, snap := range oldSnapMap[i] {
+			table.Append([]string{
+				i,
+				aws.StringValue(snap.DBSnapshotIdentifier),
+				aws.TimeValue(snap.SnapshotCreateTime).Format(time.UnixDate),
+				strconv.Itoa(int(aws.Int64Value(snap.AllocatedStorage))),
+			})
+		}
+	}
 	table.Render()
 }
