@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jonstacks/aws/pkg/models"
 	"github.com/jonstacks/aws/pkg/utils"
@@ -32,16 +31,7 @@ func identifier(i *ec2.Instance) string {
 }
 
 func main() {
-	s := session.Must(
-		session.NewSessionWithOptions(
-			session.Options{
-				SharedConfigState: session.SharedConfigEnable,
-			},
-		),
-	)
-
-	client := ec2.New(s)
-	models.EC2Client(client)
+	models.Init(models.DefaultSession())
 
 	opts := models.RunningInstancesOpts{IncludeSpot: true}
 	all := models.RunningInstances(opts)
