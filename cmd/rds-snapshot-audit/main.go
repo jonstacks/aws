@@ -26,7 +26,8 @@ func main() {
 	dbs, err := models.RunningDBInstances()
 	utils.ExitErrorHandler(err)
 
-	snapshots := models.DBSnapshots()
+	snapshots, err := models.DBSnapshots()
+	utils.ExitErrorHandler(err)
 
 	view := views.NewRDSSnapshotAudit(snapshots, dbs)
 
