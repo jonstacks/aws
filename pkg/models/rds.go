@@ -16,9 +16,19 @@ func RDSClient(client *rds.RDS) {
 // have to do client side filtering since the API doesn't support filters at
 // this time.
 func ReservedDBInstances() ([]*rds.ReservedDBInstance, error) {
+	ris := make([]*rds.ReservedDBInstance, 0)
 	params := &rds.DescribeReservedDBInstancesInput{}
-	resp, err := rdsClient.DescribeReservedDBInstances(params)
-	ris := resp.ReservedDBInstances
+
+	err := rdsClient.DescribeReservedDBInstancesPages(params,
+		func(page *rds.DescribeReservedDBInstancesOutput, lastPage bool) bool {
+			ris = append(ris, page.ReservedDBInstances...)
+			return !lastPage
+		})
+
+	if err != nil {
+		return ris, err
+	}
+
 	filtered := make([]*rds.ReservedDBInstance, 0)
 	for _, ri := range ris {
 		if aws.StringValue(ri.State) == "active" {
@@ -30,9 +40,19 @@ func ReservedDBInstances() ([]*rds.ReservedDBInstance, error) {
 
 // RunningDBInstances returns a slice of running db instances.
 func RunningDBInstances() ([]*rds.DBInstance, error) {
+	instances := make([]*rds.DBInstance, 0)
 	params := &rds.DescribeDBInstancesInput{}
-	resp, err := rdsClient.DescribeDBInstances(params)
-	instances := resp.DBInstances
+
+	err := rdsClient.DescribeDBInstancesPages(params,
+		func(page *rds.DescribeDBInstancesOutput, lastPage bool) bool {
+			instances = append(instances, page.DBInstances...)
+			return !lastPage
+		})
+
+	if err != nil {
+		return instances, err
+	}
+
 	filtered := make([]*rds.DBInstance, 0)
 	for _, i := range instances {
 		status := aws.StringValue(i.DBInstanceStatus)
