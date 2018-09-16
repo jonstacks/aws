@@ -69,6 +69,8 @@ DB that is no longer around that still has a snapshot *could* be costing you
 $285/month or $3,420/year. If your bill has a `RDS:ChargedBackupUsage` then
 this tool might be for you.
 
+![rds-snapshot-audit](doc/screenshots/rds-snapshot-audit.png)
+
 ## Finding available subnet space in a VPC
 
 When you want to create a new subnet, it can be difficult to see all of the
