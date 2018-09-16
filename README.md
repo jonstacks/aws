@@ -7,6 +7,9 @@ AWS golang pkg, binaries, utils, etc.
 - [Reservation Audits](#reservation-audits)
 	- [reserved-instance-audit](#reserved-instance-audit)
 	- [reserved-rds-audit](#reserved-rds-audit)
+- [Auditing EC2 Instances](#auditing-ec2-instances)
+	- [instances-without-cost-tag](#instances-without-cost-tag)
+- [Auditing RDS Snapshots](#auditing-rds-snapshots)
 - [Finding available subnet space in a VPC](#finding-available-subnet-space-in-a-vpc)
 - [Getting a download URL for your RDS logs](#getting-a-download-url-for-your-rds-logs)
 
@@ -53,6 +56,18 @@ certain criteria.
 The `instances-without-cost-tag` command finds running instances that do not
 contain a non-empty `cost` tag. This is helpful for making sure all instances
 are accounted for on an internal bill back basis.
+
+## Auditing RDS Snapshots
+
+The `rds-snapshot-audit` command gets a list of running DB instances and a
+list of rds snapshots. It then compares the both lists to find snapshots whose
+identifier no longer exists in the running DB instances. While not always the
+case, there is a chance that these snapshots are no longer needed and can be
+cleaned up to save you money. At the time of this writing, the cost for
+`RDS:ChargedBackupUsage` is $0.095/(GB*Month) of storage. That means a 3 TB
+DB that is no longer around that still has a snapshot *could* be costing you
+$285/month or $3,420/year. If your bill has a `RDS:ChargedBackupUsage` then
+this tool might be for you.
 
 ## Finding available subnet space in a VPC
 
