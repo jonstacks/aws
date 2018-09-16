@@ -44,14 +44,14 @@ func RunningDBInstances() ([]*rds.DBInstance, error) {
 }
 
 // DBSnapshots returns a slice of RDS Snapshots.
-func DBSnapshots() []*rds.DBSnapshot {
+func DBSnapshots() ([]*rds.DBSnapshot, error) {
 	snapshots := make([]*rds.DBSnapshot, 0)
 	params := &rds.DescribeDBSnapshotsInput{}
 
-	rdsClient.DescribeDBSnapshotsPages(params,
+	err := rdsClient.DescribeDBSnapshotsPages(params,
 		func(page *rds.DescribeDBSnapshotsOutput, lastPage bool) bool {
 			snapshots = append(snapshots, page.DBSnapshots...)
 			return !lastPage
 		})
-	return snapshots
+	return snapshots, err
 }
