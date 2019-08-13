@@ -1,6 +1,9 @@
 
-dep:
-	dep ensure
+.EXPORT_ALL_VARIABLES:
+GO111MODULE = on
 
-install: dep
+install:
 	go install ./cmd/...
+
+test:
+	go test -v -cover ./...
