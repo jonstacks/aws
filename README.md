@@ -1,7 +1,9 @@
 # aws
 
+[![Build Status](https://travis-ci.org/jonstacks/aws.svg?branch=master)](https://travis-ci.org/jonstacks/aws)
+
 AWS golang pkg, binaries, utils, etc.
-<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+<!-- TOC depthFrom:2 depthTo:6 withLinks:0 updateOnSave:1 orderedList:0 -->
 
 - [Install](#install)
 - [Reservation Audits](#reservation-audits)
