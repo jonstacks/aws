@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jonstacks/aws/pkg/utils"
-	"github.com/jonstacks/networktree/pkg/networktree"
+	"github.com/jonstacks/networktree"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -43,7 +43,7 @@ func NewReservationUtilization(running []*ec2.Instance, reservations []*ec2.Rese
 		Running:                             running,
 		Reservations:                        reservations,
 		InstanceTypeReservationUtilizations: make(map[string]*InstanceTypeReservationUtilization),
-		opts: opts,
+		opts:                                opts,
 	}
 
 	for _, i := range ru.Running {
