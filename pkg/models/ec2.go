@@ -12,6 +12,27 @@ func EC2Client(client *ec2.EC2) {
 	ec2Client = client
 }
 
+// Instances retrieves a list of instances by their instance IDs and returns
+// an error if one occured.
+func Instances(IDs []string) (instances []*ec2.Instance, err error) {
+	var resp *ec2.DescribeInstancesOutput
+
+	params := &ec2.DescribeInstancesInput{
+		InstanceIds: aws.StringSlice(IDs),
+	}
+	resp, err = ec2Client.DescribeInstances(params)
+	if err != nil {
+		return
+	}
+	instances = make([]*ec2.Instance, 0)
+	for _, r := range resp.Reservations {
+		for _, i := range r.Instances {
+			instances = append(instances, i)
+		}
+	}
+	return
+}
+
 // ReservedInstances returns a slice of reserved instances.
 func ReservedInstances() ([]*ec2.ReservedInstances, error) {
 	params := &ec2.DescribeReservedInstancesInput{
@@ -64,6 +85,19 @@ func RunningInstances(opts RunningInstancesOpts) []*ec2.Instance {
 		instances = filtered
 	}
 	return instances
+}
+
+// SpotInstanceRequests returns a slice of spot instance requests by their IDs
+// and an error if one occurs.
+func SpotInstanceRequests(requestIDs []string) (reqs []*ec2.SpotInstanceRequest, err error) {
+	var resp *ec2.DescribeSpotInstanceRequestsOutput
+
+	params := &ec2.DescribeSpotInstanceRequestsInput{
+		SpotInstanceRequestIds: aws.StringSlice(requestIDs),
+	}
+	resp, err = ec2Client.DescribeSpotInstanceRequests(params)
+	reqs = resp.SpotInstanceRequests
+	return
 }
 
 // Subnets returns a list of subnets

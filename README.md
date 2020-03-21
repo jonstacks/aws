@@ -14,6 +14,7 @@ AWS golang pkg, binaries, utils, etc.
 - [Auditing RDS Snapshots](#auditing-rds-snapshots)
 - [Finding available subnet space in a VPC](#finding-available-subnet-space-in-a-vpc)
 - [Getting a download URL for your RDS logs](#getting-a-download-url-for-your-rds-logs)
+- [Getting the IP of an EC2 Instance from the Spot Instance Request ID](#getting-the-ip-of-an-ec2-instance-from-the-spot-instance-request-id)
 
 <!-- /TOC -->
 
@@ -120,3 +121,19 @@ curl -sf -o $(basename $LOG_NAME) $LOG_URL
 
 *Note*: I have only really tested this against the `us-west-2` region. It might
         need some additional changes to support others use cases.
+
+## Getting the IP of an EC2 Instance from the Spot Instance Request ID
+
+To easily get the internal IP address of an instance given the spot
+instance request id, you can run the following:
+
+```
+spot-instance-ip sir-kd4rbkim sir-cmd8atam ...
+```
+
+And the output:
+
+```
+10.1.132.15
+10.1.136.232
+```
