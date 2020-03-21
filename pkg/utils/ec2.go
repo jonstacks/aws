@@ -13,12 +13,7 @@ import (
 // GetInstanceName returns the name for an ec2.Instance. If there is no
 // associated name tag, it returns an empty string.
 func GetInstanceName(i *ec2.Instance) string {
-	for _, t := range i.Tags {
-		if aws.StringValue(t.Key) == "Name" {
-			return aws.StringValue(t.Value)
-		}
-	}
-	return ""
+	return GetTagValue(i.Tags, "Name")
 }
 
 // ExitErrorHandler exits the program with a non-zero exit status if err != nil
@@ -69,4 +64,15 @@ func IsSubnetEmpty(subnet *ec2.Subnet) bool {
 	emptySubnetSize := int64(size - 5)
 
 	return aws.Int64Value(subnet.AvailableIpAddressCount) == emptySubnetSize
+}
+
+// StringSliceContains returns true if the slice contains the string, otherwise
+// false
+func StringSliceContains(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
 }
