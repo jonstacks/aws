@@ -26,9 +26,7 @@ func Instances(IDs []string) (instances []*ec2.Instance, err error) {
 	}
 	instances = make([]*ec2.Instance, 0)
 	for _, r := range resp.Reservations {
-		for _, i := range r.Instances {
-			instances = append(instances, i)
-		}
+		instances = append(instances, r.Instances...)
 	}
 	return
 }
