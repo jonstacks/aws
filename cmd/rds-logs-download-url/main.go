@@ -6,9 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/signer/v4"
+	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
+	"github.com/jonstacks/aws/pkg/models"
 )
 
 func fatal(err error) {
@@ -25,8 +26,8 @@ Example:
 }
 
 func main() {
-	creds := credentials.NewEnvCredentials()
-	signer := v4.NewSigner(creds)
+	sess := models.DefaultSession()
+	signer := v4.NewSigner(sess.Config.Credentials)
 
 	if len(os.Args) < 3 {
 		fatal(fmt.Errorf("Not enough arguments supplied. \n\n%s", usage()))
@@ -34,11 +35,8 @@ func main() {
 
 	dbIdentifier := os.Args[1]
 	fileName := os.Args[2]
-	region := os.Getenv("AWS_DEFAULT_REGION")
-	if region == "" {
-		fatal(fmt.Errorf("You must supply the environment var 'AWS_DEFAULT_REGION'. \n\n%s", usage()))
-	}
 
+	region := aws.StringValue(sess.Config.Region)
 	url := fmt.Sprintf(
 		"https://rds.%s.amazonaws.com/v13/downloadCompleteLogFile/%s/%s",
 		region,
