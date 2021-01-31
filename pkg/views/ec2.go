@@ -16,11 +16,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-// View is an interface which supports the Render method.
-type View interface {
-	Render(io.Writer)
-}
-
 // ReservationUtilization shows which instance types & families we are utilizing
 // instances in.
 type ReservationUtilization struct {
@@ -268,6 +263,7 @@ func (vfs *VPCFreeSubnets) addSubnet(v *ec2.Vpc, s *ec2.Subnet) {
 	vfs.vpcSubnetMap[v] = append(vfs.vpcSubnetMap[v], s)
 }
 
+// Render renders the view and implements view
 func (vfs *VPCFreeSubnets) Render(w io.Writer) {
 	table := tablewriter.NewWriter(w)
 	table.SetHeader([]string{
