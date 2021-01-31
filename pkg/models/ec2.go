@@ -35,7 +35,7 @@ func Instances(IDs []string) (instances []*ec2.Instance, err error) {
 func ReservedInstances() ([]*ec2.ReservedInstances, error) {
 	params := &ec2.DescribeReservedInstancesInput{
 		Filters: []*ec2.Filter{
-			&ec2.Filter{
+			{
 				Name: aws.String("state"),
 				Values: []*string{
 					aws.String("active"),
