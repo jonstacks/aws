@@ -33,3 +33,10 @@ func GetBucketReplication(bucket *s3.Bucket) (*s3.GetBucketReplicationOutput, er
 	output, err := s3Client.GetBucketReplication(input)
 	return output, err
 }
+
+// GetBucketVersioning gets a bucket's versioning information
+func GetBucketVersioning(bucket *s3.Bucket) (*s3.GetBucketVersioningOutput, error) {
+	input := &s3.GetBucketVersioningInput{Bucket: bucket.Name}
+	output, err := s3Client.GetBucketVersioning(input)
+	return output, err
+}

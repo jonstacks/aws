@@ -48,6 +48,47 @@ func (v *S3ReplicationAudit) Render(w io.Writer) {
 	table.Render()
 }
 
+// S3VersioningAudit is a view for checking the status of versioning on buckets
+type S3VersioningAudit struct {
+	buckets        []*s3.Bucket
+	versioningInfo []*s3.GetBucketVersioningOutput
+}
+
+// NewS3VersioningAudit initializes the S3 Versioning Audit from the
+// buckets.
+func NewS3VersioningAudit(buckets []*s3.Bucket, versioningInfo []*s3.GetBucketVersioningOutput) S3VersioningAudit {
+	return S3VersioningAudit{
+		buckets:        buckets,
+		versioningInfo: versioningInfo,
+	}
+}
+
+// Render implments view.View and renders the table
+func (v *S3VersioningAudit) Render(w io.Writer) {
+	table := tablewriter.NewWriter(w)
+	table.SetHeader([]string{
+		"Name",
+		"Versioning Enabled",
+		"MFA Delete",
+	})
+
+	for i, bucket := range v.buckets {
+		versioning := v.versioningInfo[i]
+		status := ""
+		mfa := ""
+		if versioning != nil {
+			status = aws.StringValue(versioning.Status)
+			mfa = aws.StringValue(versioning.MFADelete)
+		}
+		table.Append([]string{
+			aws.StringValue(bucket.Name),
+			status,
+			mfa,
+		})
+	}
+	table.Render()
+}
+
 type s3ReplicationRules []*s3.ReplicationRule
 
 func (rules s3ReplicationRules) Buckets() []string {
