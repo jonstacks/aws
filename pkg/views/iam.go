@@ -35,7 +35,7 @@ func (v *IAMAccessKeysAudit) Print() {
 				var lastUsed string
 				var lastUsedService string
 				if v.LastUsed[accessKeyID] != nil && v.LastUsed[accessKeyID].LastUsedDate != nil {
-					lastUsed = v.LastUsed[accessKeyID].LastUsedDate.String()
+					lastUsed = v.LastUsed[accessKeyID].LastUsedDate.Local().String()
 					lastUsedService = aws.StringValue(v.LastUsed[accessKeyID].ServiceName)
 				}
 				table.Append([]string{
