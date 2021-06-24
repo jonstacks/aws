@@ -1,7 +1,13 @@
 package models
 
 import (
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"github.com/aws/aws-sdk-go/service/rds"
 )
 
@@ -74,4 +80,38 @@ func DBSnapshots() ([]*rds.DBSnapshot, error) {
 			return !lastPage
 		})
 	return snapshots, err
+}
+
+// GetRDSLogDownloadURL returns a signed request for the given DB Instance identifier
+// and filename
+func GetRDSLogDownloadURL(dbInstanceIdentifier string, fileName string) (*http.Request, error) {
+	sess := DefaultSession()
+	signer := v4.NewSigner(sess.Config.Credentials)
+	region := aws.StringValue(sess.Config.Region)
+	url := fmt.Sprintf(
+		"https://rds.%s.amazonaws.com/v13/downloadCompleteLogFile/%s/%s",
+		region,
+		dbInstanceIdentifier,
+		fileName,
+	)
+
+	request, _ := http.NewRequest("GET", url, nil)
+	_, err := signer.Presign(request, nil, endpoints.RdsServiceID, region, 1*time.Hour, time.Now())
+	return request, err
+}
+
+// DescribeDBLogFiles returns details about the log files for a given DB Instance identifier
+func DescribeDBLogFiles(dbInstanceIdentifier string) ([]*rds.DescribeDBLogFilesDetails, error) {
+	params := &rds.DescribeDBLogFilesInput{
+		DBInstanceIdentifier: aws.String(dbInstanceIdentifier),
+	}
+	logFiles := make([]*rds.DescribeDBLogFilesDetails, 0)
+
+	err := rdsClient.DescribeDBLogFilesPages(params,
+		func(page *rds.DescribeDBLogFilesOutput, lastPage bool) bool {
+			logFiles = append(logFiles, page.DescribeDBLogFiles...)
+			return !lastPage
+		})
+
+	return logFiles, err
 }
