@@ -3,17 +3,19 @@
 [![Build Status](https://travis-ci.org/jonstacks/aws.svg?branch=master)](https://travis-ci.org/jonstacks/aws)
 
 AWS golang pkg, binaries, utils, etc.
-<!-- TOC depthFrom:2 depthTo:6 withLinks:0 updateOnSave:1 orderedList:0 -->
+
+<!-- TOC depthFrom:2 depthTo:6 orderedList:false updateOnSave:true -->
 
 - [Install](#install)
 - [Reservation Audits](#reservation-audits)
-	- [reserved-instance-audit](#reserved-instance-audit)
-	- [reserved-rds-audit](#reserved-rds-audit)
+    - [reserved-instance-audit](#reserved-instance-audit)
+    - [reserved-rds-audit](#reserved-rds-audit)
 - [Auditing EC2 Instances](#auditing-ec2-instances)
-	- [instances-without-cost-tag](#instances-without-cost-tag)
+    - [instances-without-cost-tag](#instances-without-cost-tag)
 - [Auditing RDS Snapshots](#auditing-rds-snapshots)
 - [Finding available subnet space in a VPC](#finding-available-subnet-space-in-a-vpc)
 - [Getting a download URL for your RDS logs](#getting-a-download-url-for-your-rds-logs)
+- [Sync RDS logs to a local directory](#sync-rds-logs-to-a-local-directory)
 - [Getting the IP of an EC2 Instance from the Spot Instance Request ID](#getting-the-ip-of-an-ec2-instance-from-the-spot-instance-request-id)
 
 <!-- /TOC -->
@@ -112,15 +114,42 @@ export AWS_DEFAULT_REGION="us-west-2"
 export AWS_ACCESS_KEY_ID=""
 export AWS_SECRET_ACCESS_KEY=""
 
-LOG_NAME="error/postgresql.log.2018-04-08-15"
+# Change the following 2 environment variables to the specific values
+# for your DB instance and the log name
+export DB_IDENTIFIER="fc16fu3t5aah9e9"
+export LOG_NAME="error/postgresql.log.2018-04-08-15"
 
-LOG_URL=$(rds-logs-download-url fc16fu3t5aah9e9 $LOG_NAME)
+LOG_URL=$(rds-logs-download-url $DB_IDENTIFIER $LOG_NAME)
 # -s for silent, -f for fail so we can retry on failure
 curl -sf -o $(basename $LOG_NAME) $LOG_URL
 ```
 
 *Note*: I have only really tested this against the `us-west-2` region. It might
         need some additional changes to support others use cases.
+
+## Sync RDS logs to a local directory
+
+Similar to the above command for getting a download URL for a given log and DB
+instance identifier, this command will sync all logs for a given DB instance
+identifier to a given local directory. This can be useful to run on a cron for
+syncing logs to a directory, so applications like pgbadger can process them.
+
+You can install it with:
+
+```
+go get -u github.com/jonstacks/aws/cmd/sync-rds-logs
+```
+
+The usage is as follows:
+
+```
+Usage:
+  sync-rds-logs <dbInstanceIdentifier> <directory>
+
+Example:
+  sync-rds-logs some-identifier /my/log/directory
+```
+
 
 ## Getting the IP of an EC2 Instance from the Spot Instance Request ID
 
