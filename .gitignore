@@ -15,3 +15,6 @@
 
 # Let's not check the vendor folder in for now
 vendor/
+
+# Don't check in tmp files
+tmp/
