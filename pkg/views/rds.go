@@ -1,10 +1,12 @@
 package views
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,35 +14,68 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+var normalizedUnits = map[string]int{
+	"micro":    1,
+	"small":    2,
+	"medium":   4,
+	"large":    8,
+	"xlarge":   16,
+	"2xlarge":  32,
+	"4xlarge":  64,
+	"8xlarge":  128,
+	"12xlarge": 192,
+	"16xlarge": 256,
+	"24xlarge": 384,
+}
+
+type rdsInstanceType string
+
+func (r rdsInstanceType) family() string { return string(r[0:strings.LastIndex(string(r), ".")]) }
+func (r rdsInstanceType) size() string   { return string(r[strings.LastIndex(string(r), ".")+1:]) }
+func (r rdsInstanceType) normalizedUnits() (int, bool) {
+	units, ok := normalizedUnits[r.size()]
+	return units, ok
+}
+
 // RDSReservationUtilization shows which instance types & families we are
 // utilizing instances in.
 type RDSReservationUtilization struct {
-	Running                             []*rds.DBInstance
-	Reservations                        []*rds.ReservedDBInstance
 	InstanceTypeReservationUtilizations map[string]*InstanceTypeReservationUtilization
 }
 
 // NewRDSReservationUtilization Creates a new view for the reserved utilization.
 func NewRDSReservationUtilization(running []*rds.DBInstance, reservations []*rds.ReservedDBInstance) *RDSReservationUtilization {
 	ru := RDSReservationUtilization{
-		Running:                             running,
-		Reservations:                        reservations,
 		InstanceTypeReservationUtilizations: make(map[string]*InstanceTypeReservationUtilization),
 	}
+	for _, i := range running {
+		itype := rdsInstanceType(aws.StringValue(i.DBInstanceClass))
+		var engine string
+		switch *i.Engine {
+		case "postgres":
+			engine = "postgresql"
+		default:
+			engine = *i.Engine
+		}
+		iru := ru.getOrInitializeITypeReservation(fmt.Sprintf("%s/%s", engine, itype.family()))
 
-	for _, i := range ru.Running {
-		itype := aws.StringValue(i.DBInstanceClass)
-		iru := ru.getOrInitializeITypeReservation(itype)
-		iru.NumRunning++
+		units, ok := itype.normalizedUnits()
+		if ok {
+			iru.NumRunning += units
+		}
+
 	}
 
-	for _, r := range ru.Reservations {
-		itype := aws.StringValue(r.DBInstanceClass)
-		iru := ru.getOrInitializeITypeReservation(itype)
-		iru.NumReserved += int(*r.DBInstanceCount)
+	for _, r := range reservations {
+		itype := rdsInstanceType(aws.StringValue(r.DBInstanceClass))
+		iru := ru.getOrInitializeITypeReservation(fmt.Sprintf("%s/%s", *r.ProductDescription, itype.family()))
+		units, ok := itype.normalizedUnits()
+		if ok {
+			iru.NumReserved += units * int(*r.DBInstanceCount)
+		}
 	}
-
 	return &ru
+
 }
 
 func (ru *RDSReservationUtilization) getOrInitializeITypeReservation(s string) *InstanceTypeReservationUtilization {
@@ -67,11 +102,11 @@ func (ru *RDSReservationUtilization) SortedInstanceTypes() []string {
 func (ru *RDSReservationUtilization) Print() {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{
-		"DB Instance Class",
-		"Running Count",
-		"Reserved Count",
+		"Engine/Family",
+		"Normalized Running Units",
+		"Normalized Reserved Units",
 		"Has Unused",
-		"Should be reserved?",
+		"Units Not Reserved",
 	})
 
 	for _, k := range ru.SortedInstanceTypes() {
