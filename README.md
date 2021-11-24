@@ -1,6 +1,6 @@
 # aws
 
-[![Build Status](https://travis-ci.org/jonstacks/aws.svg?branch=master)](https://travis-ci.org/jonstacks/aws)
+[![CI](https://github.com/jonstacks/aws/actions/workflows/ci.yml/badge.svg)](https://github.com/jonstacks/aws/actions/workflows/ci.yml)
 
 AWS golang pkg, binaries, utils, etc.
 
