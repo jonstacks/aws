@@ -49,3 +49,25 @@ func IAMAccessKeyLastUsed(accessKeyID string) (*iam.GetAccessKeyLastUsedOutput, 
 	}
 	return iamClient.GetAccessKeyLastUsed(input)
 }
+
+func ListPolicies() ([]*iam.Policy, error) {
+	var err error
+	input := &iam.ListPoliciesInput{}
+
+	policies := make([]*iam.Policy, 0)
+	err = iamClient.ListPoliciesPages(input,
+		func(page *iam.ListPoliciesOutput, lastPage bool) bool {
+			policies = append(policies, page.Policies...)
+			return !lastPage
+		})
+
+	return policies, err
+}
+
+func DescribePolicy(Arn, VersionId string) (*iam.GetPolicyVersionOutput, error) {
+	input := &iam.GetPolicyVersionInput{
+		PolicyArn: aws.String(Arn),
+		VersionId: aws.String(VersionId),
+	}
+	return iamClient.GetPolicyVersion(input)
+}
