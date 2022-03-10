@@ -10,7 +10,7 @@ import (
 	"github.com/jonstacks/aws/pkg/utils"
 )
 
-// Calculates the free ranges in a VPC that can be used to create new subnets.
+// Dump IAM policies to stdout or redirect to file with shell redirect
 func main() {
 	models.Init(models.DefaultSession())
 
