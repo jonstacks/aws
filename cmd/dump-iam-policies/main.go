@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,6 +13,11 @@ import (
 	"github.com/jonstacks/aws/pkg/utils"
 )
 
+type IamPolicyWithDocument struct {
+	Policy   *iam.Policy
+	Document string
+}
+
 // Dump IAM policies to stdout or redirect to file with shell redirect
 func main() {
 	models.Init(models.DefaultSession())
@@ -19,26 +25,53 @@ func main() {
 	policies, err := models.ListPolicies()
 	utils.ExitErrorHandler(err)
 
-	fmt.Printf("Got %d policies\n", len(policies))
+	log.Printf("Got %d policies\n", len(policies))
 
-	for _, policy := range policies {
-		var detail *iam.GetPolicyVersionOutput
-		for i := 0; i < 3; i++ {
-			detail, err = models.DescribePolicy(*policy.Arn, *policy.DefaultVersionId)
-			if err == nil {
-				break
-			}
-			time.Sleep(time.Second * 5)
+	policyChan := make(chan *iam.Policy, 100)
+	policyWg := sync.WaitGroup{}
+	respChan := make(chan *IamPolicyWithDocument, 100)
+
+	// Populate the policy channel the workers will pull from.
+	go func() {
+		for _, policy := range policies {
+			policyChan <- policy
 		}
-		utils.ExitErrorHandler(err)
+		close(policyChan)
+	}()
 
-		doc := detail.PolicyVersion.Document
-		decodedValue, _ := url.QueryUnescape(*doc)
-		if strings.Contains(decodedValue, "dynamo") || strings.Contains(decodedValue, "table") {
-			fmt.Printf("=============================\n%s\n=============================\n", aws.StringValue(policy.Arn))
-			fmt.Printf("%s\n", decodedValue)
+	// Start workers
+	for i := 1; i <= 4; i++ {
+		policyWg.Add(1)
+		go func(workerNum int) {
+			defer policyWg.Done()
+			for policy := range policyChan {
+				var detail *iam.GetPolicyVersionOutput
+				for i := 0; i < 3; i++ {
+					detail, err = models.DescribePolicy(*policy.Arn, *policy.DefaultVersionId)
+					if err == nil {
+						break
+					}
+					time.Sleep(time.Second * 5)
+				}
+				doc := detail.PolicyVersion.Document
+				decodedDoc, err := url.QueryUnescape(*doc)
+				if err != nil {
+					log.Printf("[Worker %d] Error decoding document: %s\n", workerNum, err)
+					continue // If we can't decode it, just log the message and move on for now
+				}
+
+				respChan <- &IamPolicyWithDocument{policy, decodedDoc}
+			}
+		}(i)
+	}
+
+	// Process responses
+	for resp := range respChan {
+		if strings.Contains(resp.Document, "dynamo") || strings.Contains(resp.Document, "table") {
+			log.Printf("=============================\n%s\n=============================\n", aws.StringValue(resp.Policy.Arn))
+			log.Printf("%s\n", resp.Document)
 		} else {
-			fmt.Printf("No dynamo policy found in %s\n", aws.StringValue(policy.Arn))
+			log.Printf("No dynamo policy found in %s\n", aws.StringValue(resp.Policy.Arn))
 		}
 	}
 }
