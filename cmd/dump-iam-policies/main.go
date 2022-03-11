@@ -65,6 +65,11 @@ func main() {
 		}(i)
 	}
 
+	go func() {
+		policyWg.Wait()
+		close(respChan)
+	}()
+
 	// Process responses
 	for resp := range respChan {
 		if strings.Contains(resp.Document, "dynamo") || strings.Contains(resp.Document, "table") {
