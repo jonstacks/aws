@@ -50,7 +50,7 @@ func NewReservationUtilization(running []*ec2.Instance, reservations []*ec2.Rese
 	for _, r := range ru.Reservations {
 		itype := aws.StringValue(r.InstanceType)
 		iru := ru.getOrInitializeITypeReservation(itype)
-		iru.NumReserved += int(*r.InstanceCount)
+		iru.NumReserved += float64(*r.InstanceCount)
 	}
 
 	if opts.OnlyUnmatched {
@@ -109,10 +109,10 @@ func (ru *ReservationUtilization) Print() {
 		}
 		table.Append([]string{
 			k,
-			strconv.Itoa(iru.NumRunning),
-			strconv.Itoa(iru.NumReserved),
+			fmt.Sprintf("%.2f", iru.NumRunning),
+			fmt.Sprintf("%.2f", iru.NumReserved),
 			extra,
-			strconv.Itoa(iru.Unreserved()),
+			fmt.Sprintf("%.2f", iru.Unreserved()),
 		})
 	}
 

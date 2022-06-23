@@ -14,25 +14,39 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-var normalizedUnits = map[string]int{
-	"micro":    1,
-	"small":    2,
-	"medium":   4,
-	"large":    8,
-	"xlarge":   16,
-	"2xlarge":  32,
-	"4xlarge":  64,
-	"8xlarge":  128,
-	"12xlarge": 192,
-	"16xlarge": 256,
-	"24xlarge": 384,
+// See https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_WorkingWithReservedDBInstances.html
+// and https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modifying.html
+// for more information about normalized instance units
+var normalizedUnits = map[string]float64{
+	"nano":      0.25,
+	"micro":     0.5,
+	"small":     1,
+	"medium":    2,
+	"large":     4,
+	"xlarge":    8,
+	"2xlarge":   16,
+	"4xlarge":   32,
+	"6xlarge":   48,
+	"8xlarge":   64,
+	"10xlarge":  80,
+	"12xlarge":  96,
+	"16xlarge":  128,
+	"24xlarge":  192,
+	"32xlarge":  256,
+	"48xlarge":  384,
+	"56xlarge":  448,
+	"64xlarge":  512,
+	"72xlarge":  576,
+	"80xlarge":  640,
+	"96xlarge":  768,
+	"112xlarge": 896,
 }
 
 type rdsInstanceType string
 
 func (r rdsInstanceType) family() string { return string(r[0:strings.LastIndex(string(r), ".")]) }
 func (r rdsInstanceType) size() string   { return string(r[strings.LastIndex(string(r), ".")+1:]) }
-func (r rdsInstanceType) normalizedUnits() (int, bool) {
+func (r rdsInstanceType) normalizedUnits() (float64, bool) {
 	units, ok := normalizedUnits[r.size()]
 	return units, ok
 }
@@ -61,7 +75,11 @@ func NewRDSReservationUtilization(running []*rds.DBInstance, reservations []*rds
 
 		units, ok := itype.normalizedUnits()
 		if ok {
-			iru.NumRunning += units
+			if aws.BoolValue(i.MultiAZ) == true {
+				iru.NumRunning += units * 2
+			} else {
+				iru.NumRunning += units
+			}
 		}
 
 	}
@@ -71,7 +89,7 @@ func NewRDSReservationUtilization(running []*rds.DBInstance, reservations []*rds
 		iru := ru.getOrInitializeITypeReservation(fmt.Sprintf("%s/%s", *r.ProductDescription, itype.family()))
 		units, ok := itype.normalizedUnits()
 		if ok {
-			iru.NumReserved += units * int(*r.DBInstanceCount)
+			iru.NumReserved += units * float64(*r.DBInstanceCount)
 		}
 	}
 	return &ru
@@ -117,10 +135,10 @@ func (ru *RDSReservationUtilization) Print() {
 		}
 		table.Append([]string{
 			k,
-			strconv.Itoa(iru.NumRunning),
-			strconv.Itoa(iru.NumReserved),
+			fmt.Sprintf("%.2f", iru.NumRunning),
+			fmt.Sprintf("%.2f", iru.NumReserved),
 			extra,
-			strconv.Itoa(iru.Unreserved()),
+			fmt.Sprintf("%.2f", iru.Unreserved()),
 		})
 	}
 

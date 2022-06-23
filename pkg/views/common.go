@@ -4,8 +4,8 @@ package views
 // Instance type are running
 type InstanceTypeReservationUtilization struct {
 	InstanceType string
-	NumReserved  int
-	NumRunning   int
+	NumReserved  float64
+	NumRunning   float64
 }
 
 func (i *InstanceTypeReservationUtilization) String() string {
@@ -21,6 +21,6 @@ func (i *InstanceTypeReservationUtilization) HasUnused() bool {
 // Unreserved returns the difference between the number of running instances
 // and the number of reserved instances. A negative result implies there are
 // more instances reserved than running.
-func (i *InstanceTypeReservationUtilization) Unreserved() int {
+func (i *InstanceTypeReservationUtilization) Unreserved() float64 {
 	return i.NumRunning - i.NumReserved
 }
